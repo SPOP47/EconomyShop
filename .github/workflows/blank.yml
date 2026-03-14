@@ -1,36 +1,77 @@
-# This is a basic workflow to help you get started with Actions
+name: Build EconomyShop Phar
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches: [main]
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Install PHP 8.1
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, zip
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Check files
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          echo "=== Repo files ==="
+          ls -la
+
+      - name: Extract ZIP
+        run: unzip -o SunilShop.zip
+
+      - name: Check extracted folder
+        run: |
+          echo "=== After extract ==="
+          ls -la
+
+      - name: Build Phar
+        run: |
+          php -d phar.readonly=0 << 'PHPSCRIPT'
+          <?php
+          $srcDir  = __DIR__ . '/EconomyShopFINAL';
+          $outFile = __DIR__ . '/EconomyShop.phar';
+
+          if (file_exists($outFile)) {
+              unlink($outFile);
+          }
+
+          $phar = new Phar($outFile);
+          $phar->startBuffering();
+          $phar->setStub('<?php __HALT_COMPILER();');
+
+          $iterator = new RecursiveIteratorIterator(
+              new RecursiveDirectoryIterator($srcDir, FilesystemIterator::SKIP_DOTS)
+          );
+
+          foreach ($iterator as $file) {
+              if ($file->isDir()) continue;
+              $filePath     = $file->getRealPath();
+              $relativePath = str_replace($srcDir . DIRECTORY_SEPARATOR, '', $filePath);
+              $relativePath = str_replace(DIRECTORY_SEPARATOR, '/', $relativePath);
+              $phar->addFile($filePath, $relativePath);
+              echo "Added: $relativePath\n";
+          }
+
+          $phar->stopBuffering();
+          echo "\nDone! Size: " . round(filesize($outFile) / 1024, 2) . " KB\n";
+          PHPSCRIPT
+
+      - name: Verify Phar
+        run: |
+          ls -lh EconomyShop.phar
+          echo "Phar ready!"
+
+      - name: Upload Phar
+        uses: actions/upload-artifact@v4
+        with:
+          name: EconomyShop-phar
+          path: EconomyShop.phar
+          retention-days: 30
