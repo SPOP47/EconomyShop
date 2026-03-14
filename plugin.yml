@@ -1,0 +1,56 @@
+---
+name: EconomyShop
+main: DevShop\economyshop\Loader
+api:
+- 5.0.0
+version: 1.0.0
+author: DevPlugin
+description: "A mast EconomyShop plugin with /shop, /sell, categories & InvMenu GUI"
+softdepend:
+- EconomyAPI
+- BedrockEconomy
+commands:
+  shop:
+    description: "Open the EconomyShop"
+    aliases:
+      - es
+      - eshop
+    permission: economyshop.command
+  sell:
+    description: "Sell item in your hand"
+    usage: "/sell [hand|all]"
+    permission: economyshop.sell
+  balance:
+    description: "Check your balance"
+    usage: "/balance [player]"
+    aliases:
+      - bal
+      - money
+    permission: economyshop.balance
+  pay:
+    description: "Pay money to a player"
+    usage: "/pay <player> <amount>"
+    permission: economyshop.pay
+permissions:
+  economyshop.command:
+    description: "Open the shop and use shop management commands"
+    default: true
+  economyshop.sell:
+    description: "Sell items"
+    default: true
+  economyshop.balance:
+    description: "Check balance"
+    default: true
+  economyshop.pay:
+    description: "Pay players"
+    default: true
+  economyshop.command.add:
+    description: "Add categories/items to shop"
+    default: op
+  economyshop.command.remove:
+    description: "Remove categories/items from shop"
+    default: op
+  economyshop.command.help:
+    description: "View shop admin help"
+    default: op
+...
