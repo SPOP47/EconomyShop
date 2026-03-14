@@ -16,12 +16,12 @@ jobs:
           php-version: '8.1'
 
       - name: Extract ZIP
-        run: unzip EconomyShop_v1.0.0.zip
+        run: unzip EconomyShopFinal.zip
 
       - name: Build Phar
         run: |
           php -d phar.readonly=0 -r "
-          \$phar = new Phar('EconomyShop.phar');
+          \$phar = new Phar('EconomyShopFinel.phar');
           \$phar->startBuffering();
           \$phar->setStub('<?php __HALT_COMPILER();');
           \$phar->buildFromDirectory('EconomyShop2');
@@ -33,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: EconomyShop
-          path: EconomyShop.phar
+          path: EconomyShopFinel.phar
