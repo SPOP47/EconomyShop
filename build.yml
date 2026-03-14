@@ -1,0 +1,36 @@
+name: Build Phar
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Extract ZIP
+        run: unzip EconomyShop_v1.0.0.zip
+
+      - name: Build Phar
+        run: |
+          php -d phar.readonly=0 -r "
+          \$phar = new Phar('EconomyShop.phar');
+          \$phar->startBuffering();
+          \$phar->setStub('<?php __HALT_COMPILER();');
+          \$phar->buildFromDirectory('EconomyShop2');
+          \$phar->stopBuffering();
+          echo 'Done!';
+          "
+
+      - name: Upload Phar
+        uses: actions/upload-artifact@v3
+        with:
+          name: EconomyShop
+          path: EconomyShop.phar
