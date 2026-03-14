@@ -1,36 +1,82 @@
-name: Build Phar
+name: Build EconomyShop Phar
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Install PHP
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install PHP 8.1
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.1'
+          extensions: mbstring, zip
 
-      name: Extract ZIP
-  run: unzip EconomyShopV2.zip
+      - name: Check files
+        run: |
+          echo "=== Repo files ==="
+          ls -la
+          echo "=== ZIP check ==="
+          ls *.zip 2>/dev/null || echo "No zip found"
+
+      - name: Extract ZIP
+        run: unzip -o EconomyShopV2.zip
+
+      - name: Check extracted folder
+        run: |
+          echo "=== After extract ==="
+          ls -la
+          echo "=== Plugin folder ==="
+          ls EconomyShopV2/
 
       - name: Build Phar
         run: |
-          php -d phar.readonly=0 -r "
-          \$phar = new Phar('EconomyShop.phar');
-          \$phar->startBuffering();
-          \$phar->setStub('<?php __HALT_COMPILER();');
-          phar->buildFromDirectory('EconomyShopV2');
-          \$phar->stopBuffering();
-          echo 'EconomyShop.phar ban gaya!';
-          "
+          php -d phar.readonly=0 << 'PHPSCRIPT'
+          <?php
+          $srcDir  = __DIR__ . '/EconomyShopV2';
+          $outFile = __DIR__ . '/EconomyShop.phar';
 
-      - name: Upload Phar
+          if (file_exists($outFile)) {
+              unlink($outFile);
+          }
+
+          $phar = new Phar($outFile);
+          $phar->startBuffering();
+          $phar->setStub('<?php __HALT_COMPILER();');
+
+          $iterator = new RecursiveIteratorIterator(
+              new RecursiveDirectoryIterator($srcDir, FilesystemIterator::SKIP_DOTS)
+          );
+
+          foreach ($iterator as $file) {
+              if ($file->isDir()) continue;
+              $filePath     = $file->getRealPath();
+              $relativePath = str_replace($srcDir . DIRECTORY_SEPARATOR, '', $filePath);
+              $relativePath = str_replace(DIRECTORY_SEPARATOR, '/', $relativePath);
+              $phar->addFile($filePath, $relativePath);
+              echo "Added: $relativePath\n";
+          }
+
+          $phar->stopBuffering();
+          echo "\nDone! Size: " . round(filesize($outFile) / 1024, 2) . " KB\n";
+          PHPSCRIPT
+
+      - name: Verify Phar
+        run: |
+          echo "=== Phar check ==="
+          ls -lh EconomyShop.phar
+          echo "Phar created successfully!"
+
+      - name: Upload Phar artifact
         uses: actions/upload-artifact@v4
         with:
-          name: EconomyShop
+          name: EconomyShop-phar
           path: EconomyShop.phar
+          retention-days: 30
