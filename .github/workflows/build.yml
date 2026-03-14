@@ -15,8 +15,8 @@ jobs:
         with:
           php-version: '8.1'
 
-      - name: Extract ZIP
-        run: unzip EconomyShopFinal.zip
+      name: Extract ZIP
+  run: unzip EconomyShopV2.zip
 
       - name: Build Phar
         run: |
@@ -24,7 +24,7 @@ jobs:
           \$phar = new Phar('EconomyShop.phar');
           \$phar->startBuffering();
           \$phar->setStub('<?php __HALT_COMPILER();');
-          \$phar->buildFromDirectory('EconomyShopFinal');
+          phar->buildFromDirectory('EconomyShopV2');
           \$phar->stopBuffering();
           echo 'EconomyShop.phar ban gaya!';
           "
