@@ -21,16 +21,16 @@ jobs:
       - name: Build Phar
         run: |
           php -d phar.readonly=0 -r "
-          \$phar = new Phar('EconomyShopFinel.phar');
+          \$phar = new Phar('EconomyShop.phar');
           \$phar->startBuffering();
           \$phar->setStub('<?php __HALT_COMPILER();');
-          \$phar->buildFromDirectory('EconomyShop2');
+          \$phar->buildFromDirectory('EconomyShopFinal');
           \$phar->stopBuffering();
-          echo 'Done!';
+          echo 'EconomyShop.phar ban gaya!';
           "
 
       - name: Upload Phar
         uses: actions/upload-artifact@v4
         with:
           name: EconomyShop
-          path: EconomyShopFinel.phar
+          path: EconomyShop.phar
