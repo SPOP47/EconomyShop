@@ -1,4 +1,4 @@
-name: Build Plugins
+name: Build EconomyShop Phar
 
 on:
   push:
@@ -17,69 +17,62 @@ jobs:
         with:
           php-version: '8.1'
 
-      - name: List files
+      - name: Show files
         run: ls -la
 
-      - name: Extract ShopSell.zip
-        run: unzip -o ShopSell.zip -d extracted
+      - name: Extract ZIP
+        run: unzip -o SunilShopFA.zip -d extracted
 
       - name: Show extracted
         run: find extracted -type f | sort
 
-      - name: Build phars
+      - name: Build Phar
         run: |
           php -d phar.readonly=0 << 'EOF'
           <?php
-          function buildPhar(string $srcDir, string $outFile): void {
-              if (!is_dir($srcDir)) {
-                  echo "SKIP: $srcDir not found\n";
-                  return;
-              }
-              if (file_exists($outFile)) unlink($outFile);
-              $phar = new Phar($outFile);
-              $phar->startBuffering();
-              $phar->setStub('<?php __HALT_COMPILER();');
-              $iter = new RecursiveIteratorIterator(
-                  new RecursiveDirectoryIterator($srcDir, FilesystemIterator::SKIP_DOTS)
-              );
-              foreach ($iter as $file) {
-                  if ($file->isDir()) continue;
-                  $rel = ltrim(str_replace($srcDir, '', $file->getRealPath()), '/\\');
-                  $rel = str_replace('\\', '/', $rel);
-                  $phar->addFile($file->getRealPath(), $rel);
-              }
-              $phar->stopBuffering();
-              echo "Built: $outFile (" . round(filesize($outFile)/1024, 2) . " KB)\n";
+          $srcDir  = __DIR__ . '/extracted/SunilShopFA';
+          $outFile = __DIR__ . '/EconomyShop.phar';
+
+          if (!is_dir($srcDir)) {
+              die("ERROR: Folder not found: $srcDir\n");
           }
 
-          $base = __DIR__ . '/extracted/Plugin';
-          buildPhar("$base/Shop",   __DIR__ . '/Shop.phar');
-          buildPhar("$base/SellUI", __DIR__ . '/SellUI.phar');
-          buildPhar("$base/XpShop", __DIR__ . '/XpShop.phar');
-          echo "All done!\n";
+          if (file_exists($outFile)) unlink($outFile);
+
+          $phar = new Phar($outFile);
+          $phar->startBuffering();
+          $phar->setStub('<?php __HALT_COMPILER();');
+
+          $iter = new RecursiveIteratorIterator(
+              new RecursiveDirectoryIterator($srcDir, FilesystemIterator::SKIP_DOTS)
+          );
+
+          foreach ($iter as $file) {
+              if ($file->isDir()) continue;
+              $rel = ltrim(str_replace($srcDir, '', $file->getRealPath()), '/\\');
+              $rel = str_replace('\\', '/', $rel);
+              $phar->addFile($file->getRealPath(), $rel);
+              echo "Added: $rel\n";
+          }
+
+          $phar->stopBuffering();
+          echo "\nDone! Size: " . round(filesize($outFile)/1024, 2) . " KB\n";
           EOF
 
       - name: Verify
-        run: ls -lh *.phar
+        run: |
+          if [ -f EconomyShop.phar ]; then
+            echo "SUCCESS!"
+            ls -lh EconomyShop.phar
+          else
+            echo "FAILED!"
+            exit 1
+          fi
 
-      - name: Upload Shop.phar
+      - name: Upload Phar
         uses: actions/upload-artifact@v4
         with:
-          name: Shop-phar
-          path: Shop.phar
-          retention-days: 30
-
-      - name: Upload SellUI.phar
-        uses: actions/upload-artifact@v4
-        with:
-          name: SellUI-phar
-          path: SellUI.phar
-          retention-days: 30
-
-      - name: Upload XpShop.phar
-        uses: actions/upload-artifact@v4
-        with:
-          name: XpShop-phar
-          path: XpShop.phar
+          name: EconomyShop-phar
+          path: EconomyShopFinel.phar
           retention-days: 30
           
