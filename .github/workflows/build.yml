@@ -1,4 +1,4 @@
-name: Build EconomyShop Phar
+name: Build All 3 Plugins
 
 on:
   push:
@@ -19,21 +19,103 @@ jobs:
           php-version: '8.1'
           extensions: mbstring, zip
 
-      - name: Check files
-        run: |
-          echo "=== Repo files ==="
-          ls -la
-          echo "=== ZIP check ==="
-          ls *.zip 2>/dev/null || echo "No zip found"
-
       - name: Extract ZIP
-        run: unzip -o EconomyShopV2.zip
+        run: unzip -o ShopSell.zip
 
-      - name: Check extracted folder
+      - name: Show extracted folders
         run: |
-          echo "=== After extract ==="
+          echo "=== Extracted ==="
           ls -la
-          echo "=== Plugin folder ==="
+          ls Plugin/
+
+      - name: Build Shop.phar
+        run: |
+          php -d phar.readonly=0 -r "
+          \$src  = __DIR__ . '/Plugin/Shop';
+          \$out  = __DIR__ . '/Shop.phar';
+          if (!is_dir(\$src)) die('Shop folder not found!' . PHP_EOL);
+          if (file_exists(\$out)) unlink(\$out);
+          \$p = new Phar(\$out);
+          \$p->startBuffering();
+          \$p->setStub('<?php __HALT_COMPILER();');
+          \$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(\$src, FilesystemIterator::SKIP_DOTS));
+          foreach (\$it as \$f) {
+              if (\$f->isDir()) continue;
+              \$rel = str_replace(\$src . DIRECTORY_SEPARATOR, '', \$f->getRealPath());
+              \$rel = str_replace(DIRECTORY_SEPARATOR, '/', \$rel);
+              \$p->addFile(\$f->getRealPath(), \$rel);
+          }
+          \$p->stopBuffering();
+          echo 'Shop.phar done! ' . round(filesize(\$out)/1024,2) . ' KB' . PHP_EOL;
+          "
+
+      - name: Build SellUI.phar
+        run: |
+          php -d phar.readonly=0 -r "
+          \$src  = __DIR__ . '/Plugin/SellUI';
+          \$out  = __DIR__ . '/SellUI.phar';
+          if (!is_dir(\$src)) die('SellUI folder not found!' . PHP_EOL);
+          if (file_exists(\$out)) unlink(\$out);
+          \$p = new Phar(\$out);
+          \$p->startBuffering();
+          \$p->setStub('<?php __HALT_COMPILER();');
+          \$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(\$src, FilesystemIterator::SKIP_DOTS));
+          foreach (\$it as \$f) {
+              if (\$f->isDir()) continue;
+              \$rel = str_replace(\$src . DIRECTORY_SEPARATOR, '', \$f->getRealPath());
+              \$rel = str_replace(DIRECTORY_SEPARATOR, '/', \$rel);
+              \$p->addFile(\$f->getRealPath(), \$rel);
+          }
+          \$p->stopBuffering();
+          echo 'SellUI.phar done! ' . round(filesize(\$out)/1024,2) . ' KB' . PHP_EOL;
+          "
+
+      - name: Build XpShop.phar
+        run: |
+          php -d phar.readonly=0 -r "
+          \$src  = __DIR__ . '/Plugin/XpShop';
+          \$out  = __DIR__ . '/XpShop.phar';
+          if (!is_dir(\$src)) die('XpShop folder not found!' . PHP_EOL);
+          if (file_exists(\$out)) unlink(\$out);
+          \$p = new Phar(\$out);
+          \$p->startBuffering();
+          \$p->setStub('<?php __HALT_COMPILER();');
+          \$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(\$src, FilesystemIterator::SKIP_DOTS));
+          foreach (\$it as \$f) {
+              if (\$f->isDir()) continue;
+              \$rel = str_replace(\$src . DIRECTORY_SEPARATOR, '', \$f->getRealPath());
+              \$rel = str_replace(DIRECTORY_SEPARATOR, '/', \$rel);
+              \$p->addFile(\$f->getRealPath(), \$rel);
+          }
+          \$p->stopBuffering();
+          echo 'XpShop.phar done! ' . round(filesize(\$out)/1024,2) . ' KB' . PHP_EOL;
+          "
+
+      - name: Verify all phars
+        run: |
+          ls -lh Shop.phar SellUI.phar XpShop.phar
+          echo "All 3 phars ready!"
+
+      - name: Upload Shop.phar
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shop-phar
+          path: Shop.phar
+          retention-days: 30
+
+      - name: Upload SellUI.phar
+        uses: actions/upload-artifact@v4
+        with:
+          name: SellUI-phar
+          path: SellUI.phar
+          retention-days: 30
+
+      - name: Upload XpShop.phar
+        uses: actions/upload-artifact@v4
+        with:
+          name: XpShop-phar
+          path: XpShop.phar
+          retention-days: 30
           ls EconomyShopV2/
 
       - name: Build Phar
